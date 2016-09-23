@@ -35,6 +35,7 @@
 @property (nonatomic, strong) UIView *customView;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 
+@property (nonatomic, assign) CGFloat horizontalOffset;
 @property (nonatomic, assign) CGFloat verticalOffset;
 @property (nonatomic, assign) CGFloat verticalSpace;
 
@@ -264,6 +265,17 @@ static char const * const kEmptyDataSetView =       "emptyDataSetView";
     }
     return nil;
 }
+
+- (CGFloat)dzn_horizontalOffset
+{
+  CGFloat offset = 0.0;
+  
+  if (self.emptyDataSetSource && [self.emptyDataSetSource respondsToSelector:@selector(horizontalOffsetForEmptyDataSet:)]) {
+    offset = [self.emptyDataSetSource horizontalOffsetForEmptyDataSet:self];
+  }
+  return offset;
+}
+
 
 - (CGFloat)dzn_verticalOffset
 {
@@ -518,7 +530,8 @@ static char const * const kEmptyDataSetView =       "emptyDataSetView";
         
         // Configure offset
         view.verticalOffset = [self dzn_verticalOffset];
-        
+        view.horizontalOffset = [self dzn_horizontalOffset];
+      
         // Configure the empty dataset view
         view.backgroundColor = [self dzn_dataSetBackgroundColor];
         view.hidden = NO;
@@ -924,13 +937,17 @@ Class dzn_baseClassToSwizzleForTarget(id target)
     
     [self addConstraint:centerXConstraint];
     [self addConstraint:centerYConstraint];
-    [self addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[contentView]|" options:0 metrics:nil views:@{@"contentView": self.contentView}]];
-    
+  
     // When a custom offset is available, we adjust the vertical constraints' constants
     if (self.verticalOffset != 0 && self.constraints.count > 0) {
         centerYConstraint.constant = self.verticalOffset;
     }
-    
+  
+    // When a custom offset is available, we adjust the horizontal constraints' constants
+    if (self.horizontalOffset != 0 && self.constraints.count > 0) {
+      centerXConstraint.constant = self.horizontalOffset;
+    }
+  
     // If applicable, set the custom view's constraints
     if (_customView) {
         [self.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|[customView]|" options:0 metrics:nil views:@{@"customView":_customView}]];
